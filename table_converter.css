@@ -29,7 +29,7 @@
     background: green;
 }
 #table-converter-column-list tr.unconverted.dont-truncate {
-    background: palevioletred;
+    background: red;
 }
 
 #table-converter-column-list tr.unconverted td {

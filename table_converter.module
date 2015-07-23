@@ -77,7 +77,7 @@ function table_converter_create_column_table($table_name) {
     if (intval($max) >= 191
       && $column_def->COLLATION_NAME == "utf8_general_ci"
       && $column_def->DATA_TYPE == "varchar"
-      && $column_def->COLUMN_KEY == "PRI") {
+      && in_array($column_def->COLUMN_KEY, ["PRI", "UNI"])) {
       $classes[] = "dont-truncate";
     }
     if ($column_def->COLLATION_NAME == "utf8_general_ci") {
