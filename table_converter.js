@@ -3,7 +3,7 @@
     attach: function(context, settings) {
       jQuery("#table-converter-column-list .convert-button button", context)
         .not("table-converter-button-processed")
-        .on("click", Drupal.behaviors.table_converter.convertButtonOnClickHandler)
+        .bind("click", Drupal.behaviors.table_converter.convertButtonOnClickHandler)
         .addClass("table-converter-button-processed");
       var unconverted = jQuery("tr.unconverted", context).length,
         truncateDanger = jQuery(".dont-truncate").length,
