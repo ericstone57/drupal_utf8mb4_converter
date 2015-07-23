@@ -168,8 +168,8 @@ function table_converter_convert_table($tablename) {
     try {
       $results[] = table_converter_fix_column($column_def, $tablename);
     } catch(Exception $e) {
-      drupal_set_message($e->getMessage());
-      watchdog_exception(__FUNCTION__, $e);
+      drupal_set_message($tablename . ': ' . $e->getMessage(), 'error');
+      watchdog_exception('table_converter', $e);
     }
   }
   table_converter_fix_table($tablename);
@@ -215,7 +215,7 @@ function table_converter_fix_column( $column_def, $table ) {
   // only resize columns that are a key
 
 
-  if (trim($column_def->COLUMN_KEY) == "PRI" && intval($column_def->LENGTH) >= 192) {
+  if (in_array(trim($column_def->COLUMN_KEY), ["PRI", "UNI"]) && intval($column_def->LENGTH) >= 192) {
     $column_def->LENGTH = 191;
   }
 
