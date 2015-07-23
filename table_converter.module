@@ -10,15 +10,22 @@
 function table_converter_menu() {
   $items = [];
   $items["admin/config/system/tables"] = array(
-    'title' => t('Database Tables'),
-    'description' => t('Convert databse tables from utf8 to utf8mb4'),
+    'title' => t('Database tables'),
+    'description' => t('Convert database tables from utf8 to utf8mb4'),
     'page callback' => 'table_converter_view',
     'access arguments' => [ "administer software updates" ],
     'type' => MENU_NORMAL_ITEM,
   );
+  $items["admin/config/system/tables/convert"] = array(
+    'title' => t('Database tables'),
+    'description' => t('Convert database tables from utf8 to utf8mb4'),
+    'page callback' => 'table_converter_convert_all_tables',
+    'access arguments' => [ "administer software updates" ],
+    'type' => MENU_NORMAL_ITEM,
+  );
   $items["admin/config/system/table/%"] = array(
-    'title' => t('Database Tables'),
-    'description' => t('Convert databse tables from utf8 to utf8mb4'),
+    'title' => t('Database tables'),
+    'description' => t('Convert database tables from utf8 to utf8mb4'),
     'page callback' => 'table_converter_convert_table',
     'page arguments' => [4],
     'access arguments' => [ "administer software updates" ],
@@ -159,6 +166,46 @@ function table_converter_create_display_row($tablename) {
   ];
 }
 
+function table_converter_convert_all_tables() {
+  $batch = [
+    'title' => t('Converting tables to utf8mb4'),
+    'init_message' => t('Conversion is starting...'),
+    'progress_message' => t('Converted @current out of @total'),
+    'finished' => 'table_converter_convert_table_finished'
+  ];
+  foreach (db_query("show tables")->fetchCol() as $table) {
+    $batch['operations'][] = [
+      'table_converter_convert_table_batch', [$table]
+    ];
+  }
+  batch_set($batch);
+  batch_process('admin/config/system/tables');
+}
+
+function table_converter_convert_table_batch($table, &$context) {
+  $schema = table_converter_get_column_iterator($table);
+  foreach ($schema as $column_name => $column_def){
+    try {
+      $results[] = table_converter_fix_column($column_def, $table);
+    } catch(Exception $e) {
+      drupal_set_message($table . ': ' . $e->getMessage(), 'error');
+      watchdog_exception('table_converter', $e);
+    }
+  }
+  try {
+    table_converter_fix_table($table);
+  } catch(Exception $e) {
+    drupal_set_message($table . ': ' . $e->getMessage(), 'error');
+    watchdog_exception('table_converter', $e);
+  }
+  $context['results'][] = $table;
+  $context['message'] = t('Now processing %table', ['%table' => $table]);
+}
+
+function table_converter_convert_table_finished($success, $results, $operations) {
+  drupal_set_message(t('@count tables processed.', ['@count' => count($results)]));
+}
+
 /**
  * @param $tablename
  */
@@ -172,7 +219,12 @@ function table_converter_convert_table($tablename) {
       watchdog_exception('table_converter', $e);
     }
   }
-  table_converter_fix_table($tablename);
+  try {
+    table_converter_fix_table($tablename);
+  } catch(Exception $e) {
+    drupal_set_message($tablename . ': ' . $e->getMessage(), 'error');
+    watchdog_exception('table_converter', $e);
+  }
   $table = table_converter_create_column_table($tablename);
   echo $table['data']['data']['data'];
   exit();
@@ -252,7 +304,7 @@ function table_converter_get_column_iterator($table, $all = false) {
     . $databases['default']['default']['database'] . "' and table_name = '{"
     . $table . "}' ";
   if ($all === false) {
-    $sql .= " and collation_name is not null and collation_name != 'utf8mb4_general_ci'";
+    $sql .= " and collation_name is not null and collation_name not like 'utf8mb4_%'";
   }
   $cols = db_query($sql);
   if (!empty($cols)) {
