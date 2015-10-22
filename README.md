@@ -1,4 +1,4 @@
-# table_converter
+# utf8mb4_converter
 
 This is a Drupal utility module to convert MySQL table COLS from UTF8 to UTF8MB4.
 
