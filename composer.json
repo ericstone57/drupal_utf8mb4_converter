@@ -1,0 +1,13 @@
+{
+    "name": "drupal/utf8mb4_convert",
+    "version": "master",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/ericstone57/drupal_utf8mb4_converter.git",
+        "reference": "master"
+    },
+    "require": {
+        "drupal/drupal": "*"
+    },
+    "type": "drupal-module"
+}
